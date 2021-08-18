@@ -2,6 +2,7 @@ package xhttp
 
 import (
 	"fmt"
+	"log"
 	"io/ioutil"
 	"net/http"
 )
@@ -20,6 +21,7 @@ func Do(req *http.Request) (string, error) {
 		return "", err
 	}
 
+	log.Printf("xhttp.Do() // status=%d body=%+v", resp.StatusCode, string(body))
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("StatusCode: %d, Body: %s", resp.StatusCode, body)
 	}

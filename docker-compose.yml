@@ -7,19 +7,33 @@ services:
     environment:
       - OUTBOUND_HOST_PORT=service-b:8082
       - JAEGER_SERVICE_NAME=service-a
-      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_HOST=jaeger-all-in-one
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
       - JAEGER_REPORTER_LOG_SPANS=true
   service-b:
     image: service-b
+    ports:
+      - "8082:8082"
     environment:
+      - OUTBOUND_HOST_PORT=service-c:8083
       - JAEGER_SERVICE_NAME=service-b
-      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_HOST=jaeger-all-in-one
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
       - JAEGER_REPORTER_LOG_SPANS=true
-  jaeger:
-    image: jaegertracing/all-in-one
+  service-c:
+    image: service-c
+    ports:
+      - "8083:8083"
+    environment:
+      - JAEGER_SERVICE_NAME=service-c
+      - JAEGER_AGENT_HOST=jaeger-all-in-one
+      - JAEGER_SAMPLER_TYPE=const
+      - JAEGER_SAMPLER_PARAM=1
+      - JAEGER_REPORTER_LOG_SPANS=true
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    command: --log-level=debug
     ports:
       - "16686:16686"
