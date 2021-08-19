@@ -28,10 +28,10 @@ func main() {
 
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("http.HandleFunc(/ping) // r=%+v", r)
-		span := tracing.StartSpanFromRequest(tracer, r)
-		defer span.Finish()
 
+		span := tracing.StartSpanFromRequest(tracer, r)
 		time.Sleep(50 * time.Millisecond)
+		span.Finish()
 
 		ctx := opentracing.ContextWithSpan(context.Background(), span)
 		response, err := ping.Ping(ctx, outboundHostPort)

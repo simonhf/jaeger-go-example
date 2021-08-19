@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	libhttp "ping/lib/http"
 	"ping/lib/tracing"
@@ -15,17 +16,21 @@ import (
 // for the downstream call, and associating the span to the parent span, if available
 // in the provided context.
 func Ping(ctx context.Context, hostPort string) (string, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "ping-send")
-	defer span.Finish()
-
 	url := fmt.Sprintf("http://%s/ping", hostPort)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
 	}
 
+	span, _ := opentracing.StartSpanFromContext(ctx, "ping-send")
+	time.Sleep(10 * time.Millisecond)
+	span.Finish()
+
 	if err := tracing.Inject(span, req); err != nil {
 		return "", err
 	}
-	return libhttp.Do(req)
+
+	body, err := libhttp.Do(req)
+
+	return body, err
 }

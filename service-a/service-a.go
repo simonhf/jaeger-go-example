@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"ping/lib/ping"
@@ -28,19 +29,39 @@ func main() {
 
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("http.HandleFunc(/ping) // r=%+v", r)
-		span := tracing.StartSpanFromRequest(tracer, r)
-		defer span.Finish()
 
+		span := tracing.StartSpanFromRequest(tracer, r)
 		time.Sleep(40 * time.Millisecond)
+		span.Finish()
 
 		ctx := opentracing.ContextWithSpan(context.Background(), span)
-		response, err := ping.Ping(ctx, outboundHostPort)
-		if err != nil {
-			log.Fatalf("Error occurred: %s", err)
-		}
+		var response1 string
+		var response2 string
+		var err error
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			response1, err = ping.Ping(ctx, outboundHostPort)
+			if err != nil {
+				log.Fatalf("Error occurred: %s", err)
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			response1, err = ping.Ping(ctx, outboundHostPort)
+			if err != nil {
+				log.Fatalf("Error occurred: %s", err)
+			}
+		}()
+
+		wg.Wait()
 
 		log.Printf("http.HandleFunc(/ping) // .Write()")
-		w.Write([]byte(fmt.Sprintf("%s -> %s", thisServiceName, response)))
+		w.Write([]byte(fmt.Sprintf("%s -> %s", thisServiceName, response1 + response2)))
 	})
 	log.Printf("Listening on localhost:8081")
 	log.Fatal(http.ListenAndServe(":8081", nil))

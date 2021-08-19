@@ -20,10 +20,10 @@ func main() {
 
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("http.HandleFunc(/ping) // r=%+v", r)
-		span := tracing.StartSpanFromRequest(tracer, r)
-		defer span.Finish()
 
+		span := tracing.StartSpanFromRequest(tracer, r)
 		time.Sleep(10 * time.Millisecond)
+		span.Finish()
 
 		log.Printf("http.HandleFunc(/ping) // .Write()")
 		w.Write([]byte(fmt.Sprintf("%s", thisServiceName)))
