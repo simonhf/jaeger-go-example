@@ -15,6 +15,7 @@ import (
 )
 
 const thisServiceName = "service-b"
+const useSelfRef = false
 
 func main() {
 	tracer, closer := tracing.Init(thisServiceName)
@@ -34,7 +35,7 @@ func main() {
 		span.Finish()
 
 		ctx := opentracing.ContextWithSpan(context.Background(), span)
-		response, err := ping.Ping(ctx, outboundHostPort)
+		response, err := ping.Ping(ctx, outboundHostPort, useSelfRef, tracer)
 		if err != nil {
 			log.Fatalf("Error occurred: %s", err)
 		}

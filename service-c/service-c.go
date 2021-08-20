@@ -12,6 +12,7 @@ import (
 )
 
 const thisServiceName = "service-c"
+const useSelfRef = false
 
 func main() {
 	tracer, closer := tracing.Init(thisServiceName)

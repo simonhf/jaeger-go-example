@@ -13,9 +13,11 @@ import (
 	"ping/lib/tracing"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/uber/jaeger-client-go"
 )
 
 const thisServiceName = "service-a"
+const useSelfRef = true
 
 func main() {
 	tracer, closer := tracing.Init(thisServiceName)
@@ -30,7 +32,22 @@ func main() {
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("http.HandleFunc(/ping) // r=%+v", r)
 
-		span := tracing.StartSpanFromRequest(tracer, r)
+		var span opentracing.Span
+		if useSelfRef {
+			ctx := jaeger.NewSpanContext( // see https://github.com/jaegertracing/jaeger-client-go/issues/510
+				jaeger.TraceID {
+					//High: 0,
+					Low:  0x100, // root
+				},
+				jaeger.SpanID(0x100), // this
+				jaeger.SpanID(0), // parent
+				false, // sampled
+				nil, // baggage
+			)
+			span = tracer.StartSpan("ping-receive", jaeger.SelfRef(ctx)) // see https://github.com/jaegertracing/jaeger-client-go#selfref
+		} else {
+			span = tracing.StartSpanFromRequest(tracer, r)
+		}
 		time.Sleep(40 * time.Millisecond)
 		span.Finish()
 
@@ -43,7 +60,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			response1, err = ping.Ping(ctx, outboundHostPort)
+			response1, err = ping.Ping(ctx, outboundHostPort, useSelfRef, tracer)
 			if err != nil {
 				log.Fatalf("Error occurred: %s", err)
 			}
@@ -52,7 +69,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			response1, err = ping.Ping(ctx, outboundHostPort)
+			response1, err = ping.Ping(ctx, outboundHostPort, useSelfRef, tracer)
 			if err != nil {
 				log.Fatalf("Error occurred: %s", err)
 			}
