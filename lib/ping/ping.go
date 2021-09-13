@@ -14,6 +14,7 @@ import (
 )
 
 var counter int = 0x100
+const reUseCounter = false
 
 // Ping sends a ping request to the given hostPort, ensuring a new span is created
 // for the downstream call, and associating the span to the parent span, if available
@@ -28,6 +29,11 @@ func Ping(ctx context.Context, hostPort string, useSelfRef bool, tracer opentrac
 	var span opentracing.Span
 	if useSelfRef {
 		counter ++
+		if reUseCounter {
+			if 0x102 == counter {
+				counter = 0x101
+			}
+		}
 		ctx := jaeger.NewSpanContext( // see https://github.com/jaegertracing/jaeger-client-go/issues/510
 			jaeger.TraceID {
 				//High: 0,
